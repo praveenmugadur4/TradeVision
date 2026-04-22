@@ -54,6 +54,12 @@
     <button class="nav-tab" data-tab="watchlist" id="tabWatchlist">
         <span class="nav-tab__icon">👁️</span>Watchlist
     </button>
+    <button class="nav-tab" data-tab="golden" id="tabGolden">
+        <span class="nav-tab__icon">🏆</span>Golden Picks
+    </button>
+    <button class="nav-tab" data-tab="weekly" id="tabWeekly">
+        <span class="nav-tab__icon">📅</span>Weekly Strategy
+    </button>
 </nav>
 
 <!-- ═══ MAIN CONTENT ═══ -->
@@ -336,6 +342,44 @@
                 </div>
             </div>
             <div class="card__body"><div class="watchlist-grid" id="watchlistGrid"><div class="empty-state"><div class="empty-state__icon">👁️</div><div class="empty-state__text">Select a category and click "Scan" to scan stocks</div></div></div></div>
+        </div>
+    </div>
+
+    <!-- ═══ GOLDEN PICKS TAB ═══ -->
+    <div class="tab-content" id="contentGolden">
+        <div class="card">
+            <div class="card__header" style="justify-content: space-between;">
+                <div class="card__title"><span class="card__title-icon">🏆</span>Today's Golden Picks — CPR-Based Intraday</div>
+                <button class="btn btn-primary" id="btnScanGolden" style="padding: 8px 20px; font-size: 0.85rem; background: linear-gradient(135deg, #FFD700, #FFA000);">⚡ Find Golden Picks</button>
+            </div>
+            <div class="card__body" style="padding: 12px;">
+                <div style="margin-bottom: 12px; padding: 10px; background: var(--bg-primary); border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-muted); line-height: 1.6;">
+                    <b>Methodology:</b> CPR (Central Pivot Range) + VWAP + MACD + EMA + RSI + ADX + Volume — 8-criteria weighted scoring.<br>
+                    Scans 40 stocks (Large + Mid Cap) and returns top picks with <b>>80% confluence</b> and <b>R:R ≥ 1:1</b>.
+                </div>
+                <div class="watchlist-grid" id="goldenPicksGrid">
+                    <div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">🏆</div><div class="empty-state__text">Click "Find Golden Picks" to scan for today's best intraday opportunities</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ WEEKLY STRATEGY TAB ═══ -->
+    <div class="tab-content" id="contentWeekly">
+        <div class="card">
+            <div class="card__header" style="justify-content: space-between;">
+                <div class="card__title"><span class="card__title-icon">📅</span>Weekly Swing Strategy — High Probability Picks</div>
+                <button class="btn btn-primary" id="btnScanWeekly" style="padding: 8px 20px; font-size: 0.85rem; background: linear-gradient(135deg, #00C853, #009624);">📊 Find Weekly Picks</button>
+            </div>
+            <div class="card__body" style="padding: 12px;">
+                <div style="margin-bottom: 12px; padding: 10px; background: var(--bg-primary); border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-muted); line-height: 1.6;">
+                    <b>Methodology:</b> SMA200 trend + EMA50 alignment + RSI sweet-spot + MACD + Supertrend + 5-week momentum + Volume trend.<br>
+                    Targets <b>~6% gain</b> over 1-2 weeks with <b>R:R ≥ 1.5:1</b>. Only strong uptrend stocks with healthy pullback entries.
+                </div>
+                <div class="watchlist-grid" id="weeklyPicksGrid">
+                    <div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">📅</div><div class="empty-state__text">Click "Find Weekly Picks" to scan for swing trade opportunities</div></div>
+                </div>
+            </div>
         </div>
     </div>
 

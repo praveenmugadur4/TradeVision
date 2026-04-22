@@ -21,6 +21,7 @@
         initThemeToggle();
         initIntraday();
         initTelegram();
+        initGoldenPicks();
         updateClock();
         updateMarketStatus();
 
@@ -534,6 +535,109 @@
                 status.style.color = 'var(--accent-red)';
             }
         });
+    }
+
+    // ─── Golden Picks & Weekly Strategy ───
+    function initGoldenPicks() {
+        document.getElementById('btnScanGolden').addEventListener('click', scanGoldenPicks);
+        document.getElementById('btnScanWeekly').addEventListener('click', scanWeeklyPicks);
+    }
+
+    async function scanGoldenPicks() {
+        const btn = document.getElementById('btnScanGolden');
+        const grid = document.getElementById('goldenPicksGrid');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span> Scanning 40 stocks...';
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="spinner" style="margin:0 auto 16px;"></div><div class="empty-state__text">Analyzing CPR + VWAP + 8 indicators across 40 stocks...</div></div>`;
+
+        try {
+            const res = await fetch('/api/golden-picks?top=6');
+            const picks = await res.json();
+            if (picks.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">⏳</div><div class="empty-state__text">No golden picks today. Market may be sideways or no stocks meet >80% confidence threshold.</div></div>`;
+                return;
+            }
+            grid.innerHTML = picks.map(p => renderGoldenCard(p)).join('');
+        } catch (e) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">❌</div><div class="empty-state__text">Error scanning. Please try again.</div></div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '⚡ Find Golden Picks';
+        }
+    }
+
+    async function scanWeeklyPicks() {
+        const btn = document.getElementById('btnScanWeekly');
+        const grid = document.getElementById('weeklyPicksGrid');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span> Scanning 50 stocks...';
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="spinner" style="margin:0 auto 16px;"></div><div class="empty-state__text">Analyzing weekly trends across 50 stocks (1-year data)...</div></div>`;
+
+        try {
+            const res = await fetch('/api/weekly-picks?top=6');
+            const picks = await res.json();
+            if (picks.length === 0) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">⏳</div><div class="empty-state__text">No weekly setups found. Market may not have strong trending stocks right now.</div></div>`;
+                return;
+            }
+            grid.innerHTML = picks.map(p => renderWeeklyCard(p)).join('');
+        } catch (e) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">❌</div><div class="empty-state__text">Error scanning. Please try again.</div></div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '📊 Find Weekly Picks';
+        }
+    }
+
+    function renderGoldenCard(p) {
+        const isBuy = p.direction === 'BUY';
+        const dirClass = isBuy ? 'buy-tip' : 'sell-tip';
+        const dirColor = isBuy ? 'var(--accent-green)' : 'var(--accent-red)';
+        return `
+            <div class="intraday-tip-card ${dirClass}" onclick="window.dispatchEvent(new CustomEvent('selectStock', {detail: '${p.symbol}'}))" style="cursor:pointer;">
+                <div class="tip-card__header">
+                    <span class="tip-card__symbol">${p.name}</span>
+                    <span class="tip-card__action ${isBuy ? 'buy' : 'sell'}">${p.direction}</span>
+                </div>
+                <div class="tip-card__price-row">
+                    <span class="tip-card__current-price">₹${formatNum(p.price)}</span>
+                    <span class="tip-card__confidence" style="color: ${p.confidence >= 85 ? '#FFD700' : dirColor}">${p.confidence}% confidence</span>
+                </div>
+                <div class="tip-card__levels">
+                    <div class="tip-level entry"><div class="tip-level__label">Entry</div><div class="tip-level__value">₹${p.entry}</div></div>
+                    <div class="tip-level target"><div class="tip-level__label">Target</div><div class="tip-level__value">₹${p.target}</div></div>
+                    <div class="tip-level stoploss"><div class="tip-level__label">Stop Loss</div><div class="tip-level__value">₹${p.stop_loss}</div></div>
+                </div>
+                <div style="margin: 6px 0 8px;"><span class="tip-card__rr">R:R = 1:${p.risk_reward}</span></div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px;">
+                    <b>CPR:</b> TC ₹${p.cpr?.tc || '—'} | Pivot ₹${p.cpr?.pivot || '—'} | BC ₹${p.cpr?.bc || '—'}
+                    <span style="margin-left: 6px; color: ${p.cpr?.cpr_type === 'VERY_NARROW' || p.cpr?.cpr_type === 'NARROW' ? '#FFD700' : 'var(--text-muted)'}">[${p.cpr?.cpr_type || ''}]</span>
+                </div>
+                <ul class="tip-card__reasoning">${(p.reasons || []).slice(0, 4).map(r => `<li>${r}</li>`).join('')}</ul>
+            </div>
+        `;
+    }
+
+    function renderWeeklyCard(p) {
+        return `
+            <div class="intraday-tip-card buy-tip" onclick="window.dispatchEvent(new CustomEvent('selectStock', {detail: '${p.symbol}'}))" style="cursor:pointer;">
+                <div class="tip-card__header">
+                    <span class="tip-card__symbol">${p.name}</span>
+                    <span class="tip-card__action buy">SWING BUY</span>
+                </div>
+                <div class="tip-card__price-row">
+                    <span class="tip-card__current-price">₹${formatNum(p.price)}</span>
+                    <span class="tip-card__confidence" style="color: #00E676">${p.confidence}% confidence</span>
+                </div>
+                <div class="tip-card__levels">
+                    <div class="tip-level entry"><div class="tip-level__label">Entry</div><div class="tip-level__value">₹${p.entry}</div></div>
+                    <div class="tip-level target"><div class="tip-level__label">Target (+${p.target_pct}%)</div><div class="tip-level__value">₹${p.target}</div></div>
+                    <div class="tip-level stoploss"><div class="tip-level__label">Stop Loss</div><div class="tip-level__value">₹${p.stop_loss}</div></div>
+                </div>
+                <div style="margin: 6px 0;"><span class="tip-card__rr">R:R = 1:${p.risk_reward}</span> &nbsp; <span style="font-size:0.75rem; color:var(--text-muted);">📅 Hold: ${p.holding_period}</span></div>
+                <ul class="tip-card__reasoning">${(p.reasons || []).slice(0, 5).map(r => `<li>${r}</li>`).join('')}</ul>
+            </div>
+        `;
     }
 
     // ─── Utilities ───

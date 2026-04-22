@@ -15,6 +15,7 @@ from engine.signals import generate_signals
 from engine.backtester import run_backtest, get_available_strategies
 from engine.intraday import generate_intraday_tips, scan_for_intraday_tips
 from engine import telegram_bot
+from engine.golden_picks import get_golden_picks, get_weekly_picks, calculate_cpr
 import json
 import math
 
@@ -304,6 +305,38 @@ def api_telegram_send_tip():
     data = request.get_json() or {}
     telegram_bot.send_intraday_tip(data)
     return jsonify({"success": True})
+
+
+# ─── GOLDEN PICKS & CPR ENDPOINTS ───
+
+@app.route("/api/golden-picks")
+def api_golden_picks():
+    """Get today's top golden intraday picks (>85% confidence)."""
+    top_n = int(request.args.get("top", 6))
+    picks = get_golden_picks(top_n=top_n)
+    return safe_jsonify(picks)
+
+
+@app.route("/api/weekly-picks")
+def api_weekly_picks():
+    """Get top weekly swing trade setups (>90% confidence)."""
+    top_n = int(request.args.get("top", 6))
+    picks = get_weekly_picks(top_n=top_n)
+    return safe_jsonify(picks)
+
+
+@app.route("/api/cpr")
+def api_cpr():
+    """Get CPR levels for a single stock."""
+    symbol = request.args.get("symbol", "RELIANCE.NS")
+    df = fetch_market_data(symbol, period="1mo", interval="1d")
+    if df is None or len(df) < 2:
+        return jsonify({"error": "No data"})
+    prev = df.iloc[-2]
+    cpr = calculate_cpr(float(prev["High"]), float(prev["Low"]), float(prev["Close"]))
+    cpr["symbol"] = symbol
+    cpr["current_price"] = round(float(df.iloc[-1]["Close"]), 2)
+    return safe_jsonify(cpr)
 
 
 if __name__ == "__main__":
