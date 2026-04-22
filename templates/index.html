@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TradeVision — Premium Trading Dashboard with Technical Analysis, Backtesting Engine, Smart Alerts, and Intraday Tips for NSE/BSE stocks.">
+    <title>TradeVision — Smart Trading Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header" id="header">
+    <div class="header__brand">
+        <div class="header__logo">TV</div>
+        <div>
+            <div class="header__title">TradeVision</div>
+            <div class="header__subtitle">Smart Trading Dashboard</div>
+        </div>
+    </div>
+
+    <div class="header__search">
+        <span class="header__search-icon">🔍</span>
+        <input type="text" class="header__search-input" id="searchInput"
+            placeholder="Search stocks... (e.g. RELIANCE, TCS, INFY)" autocomplete="off">
+        <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="header__actions">
+        <div class="header__market-status">
+            <div class="status-dot" id="marketStatusDot"></div>
+            <span id="marketStatusText">Market</span>
+        </div>
+        <div class="header__time" id="currentTime"></div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme">🌙</button>
+    </div>
+</header>
+
+<!-- ═══ NAVIGATION TABS ═══ -->
+<nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="dashboard" id="tabDashboard">
+        <span class="nav-tab__icon">📊</span>Dashboard
+    </button>
+    <button class="nav-tab" data-tab="intraday" id="tabIntraday">
+        <span class="nav-tab__icon">⚡</span>Intraday Tips
+    </button>
+    <button class="nav-tab" data-tab="backtest" id="tabBacktest">
+        <span class="nav-tab__icon">⚗️</span>Backtester
+    </button>
+    <button class="nav-tab" data-tab="alerts" id="tabAlerts">
+        <span class="nav-tab__icon">🔔</span>Alerts
+    </button>
+    <button class="nav-tab" data-tab="watchlist" id="tabWatchlist">
+        <span class="nav-tab__icon">👁️</span>Watchlist
+    </button>
+</nav>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="main-content">
+
+    <!-- ═══ DASHBOARD TAB ═══ -->
+    <div class="tab-content active" id="contentDashboard">
+        <div class="stock-info-bar" id="stockInfoBar">
+            <div>
+                <div class="stock-info__name" id="stockName">Loading...</div>
+                <span class="stock-info__symbol" id="stockSymbol">—</span>
+            </div>
+            <div class="stock-info__price" id="stockPrice">—</div>
+            <div class="stock-info__change" id="stockChange">—</div>
+            <div class="stock-info__meta" id="stockMeta">
+                <div class="stock-info__meta-item"><div class="stock-info__meta-label">Day High</div><div class="stock-info__meta-value" id="metaDayHigh">—</div></div>
+                <div class="stock-info__meta-item"><div class="stock-info__meta-label">Day Low</div><div class="stock-info__meta-value" id="metaDayLow">—</div></div>
+                <div class="stock-info__meta-item"><div class="stock-info__meta-label">52W High</div><div class="stock-info__meta-value" id="meta52High">—</div></div>
+                <div class="stock-info__meta-item"><div class="stock-info__meta-label">52W Low</div><div class="stock-info__meta-value" id="meta52Low">—</div></div>
+                <div class="stock-info__meta-item"><div class="stock-info__meta-label">Volume</div><div class="stock-info__meta-value" id="metaVolume">—</div></div>
+                <div class="stock-info__meta-item"><div class="stock-info__meta-label">P/E</div><div class="stock-info__meta-value" id="metaPE">—</div></div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div>
+                <div class="card">
+                    <div class="card__header">
+                        <div class="card__title"><span class="card__title-icon">📈</span>Price Chart</div>
+                        <div class="card__actions">
+                            <div class="timeframe-selector" id="timeframeSelector">
+                                <button class="timeframe-btn" data-period="1mo" data-interval="1d">1M</button>
+                                <button class="timeframe-btn" data-period="3mo" data-interval="1d">3M</button>
+                                <button class="timeframe-btn" data-period="6mo" data-interval="1d">6M</button>
+                                <button class="timeframe-btn active" data-period="1y" data-interval="1d">1Y</button>
+                                <button class="timeframe-btn" data-period="2y" data-interval="1d">2Y</button>
+                                <button class="timeframe-btn" data-period="5y" data-interval="1wk">5Y</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="indicator-toggles" id="indicatorToggles">
+                        <button class="indicator-toggle active" data-indicator="EMA_9">EMA 9</button>
+                        <button class="indicator-toggle active" data-indicator="EMA_21">EMA 21</button>
+                        <button class="indicator-toggle" data-indicator="EMA_50">EMA 50</button>
+                        <button class="indicator-toggle" data-indicator="SMA_200">SMA 200</button>
+                        <button class="indicator-toggle active" data-indicator="BB">Bollinger</button>
+                        <button class="indicator-toggle" data-indicator="Supertrend">Supertrend</button>
+                    </div>
+                    <div class="card__body" style="padding: 0;"><div class="chart-container" id="mainChart"></div></div>
+                </div>
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">📉</span>RSI & MACD</div></div>
+                    <div class="card__body" style="padding: 0;">
+                        <div class="rsi-chart-container" id="rsiChart"></div>
+                        <div class="macd-chart-container" id="macdChart"></div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">🔢</span>Indicator Details</div></div>
+                    <div class="card__body"><div class="indicators-grid" id="indicatorsGrid"></div></div>
+                </div>
+            </div>
+
+            <div class="signal-panel">
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">🎯</span>Trading Signal</div></div>
+                    <div class="card__body">
+                        <div class="signal-gauge">
+                            <div class="signal-gauge__label">Overall Verdict</div>
+                            <div class="signal-gauge__value" id="signalVerdict">—</div>
+                            <div class="signal-gauge__confidence" id="signalConfidence">Confidence: —</div>
+                            <div class="confidence-bar"><div class="confidence-bar__fill" id="confidenceBarFill" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">📋</span>Signal Breakdown</div></div>
+                    <div class="card__body" style="padding: 0;"><ul class="breakdown-list" id="signalBreakdown"></ul></div>
+                </div>
+                <!-- Fibonacci Levels -->
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">📐</span>Fibonacci Levels</div></div>
+                    <div class="card__body"><div class="sr-levels" id="fibLevels"></div></div>
+                </div>
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">📏</span>Support & Resistance</div></div>
+                    <div class="card__body"><div class="sr-levels" id="srLevels"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ INTRADAY TIPS TAB ═══ -->
+    <div class="tab-content" id="contentIntraday">
+        <div class="intraday-layout">
+            <div class="card">
+                <div class="card__header">
+                    <div class="card__title"><span class="card__title-icon">⚡</span>Live Intraday Tips</div>
+                    <div class="card__actions">
+                        <select id="intradayCategory" class="category-select">
+                            <option value="large_cap">Large Cap</option>
+                            <option value="mid_cap">Mid Cap</option>
+                            <option value="small_cap">Small Cap</option>
+                            <option value="penny">Penny Stocks</option>
+                        </select>
+                        <button class="btn btn-primary" id="btnScanIntraday" style="padding: 8px 16px; font-size: 0.8rem;">
+                            ⚡ Scan for Tips
+                        </button>
+                    </div>
+                </div>
+                <div class="card__body">
+                    <div id="intradayTipsGrid" class="intraday-tips-grid">
+                        <div class="empty-state">
+                            <div class="empty-state__icon">⚡</div>
+                            <div class="empty-state__text">Click "Scan for Tips" to find intraday opportunities</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Single Stock Tip -->
+            <div class="card" style="margin-top:16px;">
+                <div class="card__header">
+                    <div class="card__title"><span class="card__title-icon">🎯</span>Analyze Single Stock</div>
+                </div>
+                <div class="card__body">
+                    <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px;">
+                        <div class="form-group" style="flex:1; margin-bottom:0;">
+                            <label for="intradaySingleSymbol">Stock Symbol</label>
+                            <input type="text" id="intradaySingleSymbol" value="RELIANCE.NS" placeholder="e.g. TCS.NS">
+                        </div>
+                        <button class="btn btn-primary" id="btnSingleTip" style="padding: 10px 20px;">Analyze</button>
+                    </div>
+                    <div id="singleTipResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ BACKTEST TAB ═══ -->
+    <div class="tab-content" id="contentBacktest">
+        <div class="backtest-layout">
+            <div>
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">⚙️</span>Backtest Configuration</div></div>
+                    <div class="card__body">
+                        <form class="backtest-form" id="backtestForm">
+                            <div class="form-group">
+                                <label for="btSymbol">Stock Symbol</label>
+                                <input type="text" id="btSymbol" value="RELIANCE.NS" placeholder="e.g. RELIANCE.NS">
+                            </div>
+                            <div class="form-group">
+                                <label for="btStrategy">Strategy</label>
+                                <select id="btStrategy">
+                                    <option value="confluence">Multi-Indicator Confluence</option>
+                                    <option value="ema_crossover">EMA 9/21 Crossover</option>
+                                    <option value="rsi_reversal">RSI Reversal</option>
+                                    <option value="mean_reversion">Bollinger Mean Reversion</option>
+                                    <option value="supertrend_macd">Supertrend + MACD Combo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Backtest Period</label>
+                                <div class="period-selector" id="btPeriodSelector">
+                                    <button type="button" class="period-btn" data-period="6mo">6M</button>
+                                    <button type="button" class="period-btn" data-period="1y">1Y</button>
+                                    <button type="button" class="period-btn active" data-period="2y">2Y</button>
+                                    <button type="button" class="period-btn" data-period="5y">5Y</button>
+                                </div>
+                            </div>
+                            <div class="form-group"><label for="btCapital">Initial Capital (₹)</label><input type="number" id="btCapital" value="100000" min="10000" step="10000"></div>
+                            <div class="form-group"><label for="btStopLoss">Stop Loss (%)</label><input type="number" id="btStopLoss" value="3" min="0.5" max="20" step="0.5"></div>
+                            <div class="form-group"><label for="btTakeProfit">Take Profit (%)</label><input type="number" id="btTakeProfit" value="6" min="1" max="50" step="0.5"></div>
+                            <div class="form-group"><label for="btPositionSize">Position Size (%)</label><input type="number" id="btPositionSize" value="20" min="5" max="100" step="5"></div>
+                            <button type="submit" class="btn btn-primary" id="btnRunBacktest">⚡ Run Backtest</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="backtest-results" id="backtestResults">
+                <div class="empty-state" id="btEmptyState"><div class="empty-state__icon">⚗️</div><div class="empty-state__text">Configure and run a backtest to see results</div></div>
+                <div id="btStatsSection" style="display: none;">
+                    <div class="stats-grid" id="btStatsGrid"></div>
+                    <div class="card" style="margin-top: 16px;"><div class="card__header"><div class="card__title"><span class="card__title-icon">📈</span>Equity Curve</div></div><div class="card__body" style="padding: 0;"><div class="equity-chart-container" id="equityChart"></div></div></div>
+                    <div class="card" style="margin-top: 16px;">
+                        <div class="card__header"><div class="card__title"><span class="card__title-icon">📒</span>Trade Log</div></div>
+                        <div class="card__body" style="padding: 0; max-height: 400px; overflow-y: auto;">
+                            <table class="trade-log" id="tradeLogTable"><thead><tr><th>#</th><th>Entry</th><th>Exit</th><th>Entry ₹</th><th>Exit ₹</th><th>Qty</th><th>P&L ₹</th><th>P&L %</th><th>Reason</th></tr></thead><tbody id="tradeLogBody"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ALERTS TAB ═══ -->
+    <div class="tab-content" id="contentAlerts">
+        <div class="alerts-layout">
+            <div class="alert-form-section">
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">➕</span>Create Alert</div></div>
+                    <div class="card__body">
+                        <form class="backtest-form" id="alertForm">
+                            <div class="form-group"><label for="alertSymbol">Stock Symbol</label><input type="text" id="alertSymbol" value="RELIANCE.NS" placeholder="e.g. TCS.NS"></div>
+                            <div class="form-group"><label for="alertType">Alert Type</label>
+                                <select id="alertType">
+                                    <option value="price_above">Price Goes Above</option>
+                                    <option value="price_below">Price Goes Below</option>
+                                    <option value="signal_buy">Buy Signal Generated</option>
+                                    <option value="signal_sell">Sell Signal Generated</option>
+                                    <option value="rsi_oversold">RSI Oversold (&lt;30)</option>
+                                    <option value="rsi_overbought">RSI Overbought (&gt;70)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="alertValueGroup"><label for="alertValue">Target Price (₹)</label><input type="number" id="alertValue" value="1500" step="0.5"></div>
+                            <div class="toggle-switch"><input type="checkbox" id="alertSound" checked><label class="toggle-slider" for="alertSound"></label><span class="toggle-label">Play Sound</span></div>
+                            <div class="toggle-switch"><input type="checkbox" id="alertNotification" checked><label class="toggle-slider" for="alertNotification"></label><span class="toggle-label">Browser Notification</span></div>
+                            <button type="submit" class="btn btn-primary">🔔 Create Alert</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">⚙️</span>Alert Settings</div></div>
+                    <div class="card__body">
+                        <div class="form-group"><label>Auto-Check Interval</label><select id="alertCheckInterval"><option value="30000">30 seconds</option><option value="60000" selected>1 minute</option><option value="300000">5 minutes</option></select></div>
+                        <div class="toggle-switch" style="margin-top: 12px;"><input type="checkbox" id="alertAutoCheck" checked><label class="toggle-slider" for="alertAutoCheck"></label><span class="toggle-label">Enable Auto-Checking</span></div>
+                    </div>
+                </div>
+                <!-- Telegram Integration -->
+                <div class="card" style="margin-top: 16px;">
+                    <div class="card__header"><div class="card__title"><span class="card__title-icon">📱</span>Telegram Alerts</div></div>
+                    <div class="card__body">
+                        <div class="form-group">
+                            <label for="telegramBotToken">Bot Token</label>
+                            <input type="password" id="telegramBotToken" placeholder="Paste token from @BotFather">
+                        </div>
+                        <div class="form-group">
+                            <label for="telegramChatId">Chat ID</label>
+                            <input type="text" id="telegramChatId" placeholder="Your Telegram Chat ID">
+                        </div>
+                        <div class="toggle-switch" style="margin: 12px 0;">
+                            <input type="checkbox" id="telegramEnabled">
+                            <label class="toggle-slider" for="telegramEnabled"></label>
+                            <span class="toggle-label">Enable Telegram Alerts</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button class="btn btn-primary" id="btnSaveTelegram" style="padding: 8px 16px; font-size: 0.8rem;">💾 Save Config</button>
+                            <button class="btn btn-primary" id="btnTestTelegram" style="padding: 8px 16px; font-size: 0.8rem; background: var(--gradient-green);">🧪 Test Message</button>
+                        </div>
+                        <div id="telegramStatus" style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);"></div>
+                        <div style="margin-top: 12px; padding: 10px; background: var(--bg-primary); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted); line-height: 1.6;">
+                            <b>How to set up:</b><br>
+                            1. Open Telegram → Search <b>@BotFather</b> → Send <b>/newbot</b><br>
+                            2. Follow prompts → Copy the <b>Bot Token</b><br>
+                            3. Search <b>@userinfobot</b> → It replies with your <b>Chat ID</b><br>
+                            4. Paste both above and click Save
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="card"><div class="card__header"><div class="card__title"><span class="card__title-icon">📋</span>Active Alerts</div></div><div class="card__body active-alerts-list" id="activeAlertsList"><div class="empty-state"><div class="empty-state__icon">🔔</div><div class="empty-state__text">No alerts configured yet</div></div></div></div>
+                <div class="card" style="margin-top: 16px;"><div class="card__header"><div class="card__title"><span class="card__title-icon">📜</span>Triggered Alerts</div></div><div class="card__body" id="triggeredAlertsList"><div class="empty-state"><div class="empty-state__icon">✅</div><div class="empty-state__text">No triggered alerts yet</div></div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ WATCHLIST TAB ═══ -->
+    <div class="tab-content" id="contentWatchlist">
+        <div class="card">
+            <div class="card__header">
+                <div class="card__title"><span class="card__title-icon">👁️</span>Watchlist Scanner</div>
+                <div class="card__actions">
+                    <div class="category-tabs" id="watchlistCategoryTabs">
+                        <button class="category-tab active" data-category="large_cap">Large Cap</button>
+                        <button class="category-tab" data-category="mid_cap">Mid Cap</button>
+                        <button class="category-tab" data-category="small_cap">Small Cap</button>
+                        <button class="category-tab" data-category="penny">Penny</button>
+                    </div>
+                    <button class="btn btn-primary" id="btnScanWatchlist" style="padding: 8px 16px; font-size: 0.8rem;">🔄 Scan</button>
+                </div>
+            </div>
+            <div class="card__body"><div class="watchlist-grid" id="watchlistGrid"><div class="empty-state"><div class="empty-state__icon">👁️</div><div class="empty-state__text">Select a category and click "Scan" to scan stocks</div></div></div></div>
+        </div>
+    </div>
+
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/alerts.js"></script>
+<script src="/static/js/backtester.js"></script>
+<script src="/static/js/app.js"></script>
+
+</body>
+</html>
