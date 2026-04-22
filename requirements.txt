@@ -3,6 +3,5 @@ flask-cors==5.0.1
 yfinance==0.2.54
 pandas==2.2.3
 pandas-ta==0.4.71b0
-numpy==1.26.4
 python-telegram-bot==20.8
 gunicorn==23.0.0
