@@ -65,6 +65,42 @@
 <!-- ═══ MAIN CONTENT ═══ -->
 <main class="main-content">
 
+    <!-- ═══ MARKET PULSE BANNER ═══ -->
+    <div class="card" id="marketPulseCard" style="margin-bottom: 16px; display: none;">
+        <div class="card__header" style="justify-content: space-between; padding: 10px 16px;">
+            <div class="card__title" style="font-size: 0.85rem;"><span class="card__title-icon">🫀</span>Market Pulse</div>
+            <button class="btn" id="btnRefreshPulse" style="padding: 4px 12px; font-size: 0.72rem; background: var(--bg-secondary);" title="Refresh market data">🔄 Refresh</button>
+        </div>
+        <div class="card__body" style="padding: 8px 16px 12px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;" id="marketPulseGrid">
+                <!-- VIX -->
+                <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 10px 14px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px;">🇮🇳 India VIX (Fear Index)</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="pulseVixValue" style="font-size: 1.3rem; font-weight: 700; font-family: var(--font-mono);">—</span>
+                        <span id="pulseVixChange" style="font-size: 0.75rem;">—</span>
+                    </div>
+                    <div id="pulseVixMood" style="font-size: 0.7rem; margin-top: 4px;">—</div>
+                </div>
+                <!-- NIFTY -->
+                <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 10px 14px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px;">📊 Nifty 50 Trend</div>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span id="pulseNiftyValue" style="font-size: 1.3rem; font-weight: 700; font-family: var(--font-mono);">—</span>
+                        <span id="pulseNiftyChange" style="font-size: 0.75rem;">—</span>
+                    </div>
+                    <div id="pulseNiftyTrend" style="font-size: 0.7rem; margin-top: 4px;">—</div>
+                </div>
+                <!-- OVERALL MOOD -->
+                <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 10px 14px;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px;">🎯 Overall Market Mood</div>
+                    <div id="pulseMood" style="font-size: 1.1rem; font-weight: 700;">—</div>
+                    <div id="pulseMoodText" style="font-size: 0.7rem; margin-top: 4px;">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ DASHBOARD TAB ═══ -->
     <div class="tab-content active" id="contentDashboard">
         <div class="stock-info-bar" id="stockInfoBar">

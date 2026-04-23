@@ -10,6 +10,7 @@ import numpy as np
 from .indicators import calculate_all_indicators
 from .market_data import fetch_market_data, get_category_symbols
 from .market_data import LARGE_CAP_STOCKS, MID_CAP_STOCKS
+from .market_pulse import get_analyst_recommendations, get_news_sentiment
 
 
 def calculate_cpr(prev_high, prev_low, prev_close):
@@ -197,6 +198,47 @@ def _score_stock_intraday(symbol, df, df_ind):
         elif ema9 > ema21 or ema9 < ema21:
             score += 5
 
+    # ═══ 9. ANALYST CONSENSUS (Bonus: up to 10 pts) ═══
+    analyst_data = None
+    try:
+        analyst_data = get_analyst_recommendations(symbol)
+    except Exception:
+        pass
+    if analyst_data:
+        max_score += 10
+        cs = analyst_data["consensus_score"]
+        if cs > 0.3:
+            score += 10
+            reasons.append(f"🏦 Analysts: {analyst_data['consensus']} ({analyst_data['buy']}B/{analyst_data['hold']}H/{analyst_data['sell']}S)")
+        elif cs > 0:
+            score += 6
+            reasons.append(f"🏦 Analysts lean BUY ({analyst_data['buy']}B/{analyst_data['hold']}H/{analyst_data['sell']}S)")
+        elif cs > -0.3:
+            score += 3
+        else:
+            score += 0
+            reasons.append(f"🏦 Analysts: SELL ({analyst_data['buy']}B/{analyst_data['hold']}H/{analyst_data['sell']}S)")
+
+    # ═══ 10. NEWS SENTIMENT (Bonus: up to 10 pts) ═══
+    news_data = None
+    try:
+        news_data = get_news_sentiment(symbol)
+    except Exception:
+        pass
+    if news_data and news_data["headlines"]:
+        max_score += 10
+        ns = news_data["overall"]
+        if ns > 0.15:
+            score += 10
+            reasons.append(f"📰 News: {news_data['label']} (sentiment +{ns})")
+        elif ns > 0:
+            score += 6
+        elif ns > -0.15:
+            score += 4
+        else:
+            score += 0
+            reasons.append(f"📰 News: {news_data['label']} (sentiment {ns}) — Caution!")
+
     # Final confidence
     confidence = round((score / max_score) * 100, 1) if max_score > 0 else 0
 
@@ -241,6 +283,8 @@ def _score_stock_intraday(symbol, df, df_ind):
         "risk_reward": rr,
         "cpr": cpr,
         "reasons": reasons,
+        "analyst": analyst_data,
+        "news": news_data,
     }
 
 

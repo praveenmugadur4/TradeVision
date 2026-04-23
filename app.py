@@ -16,6 +16,7 @@ from engine.backtester import run_backtest, get_available_strategies
 from engine.intraday import generate_intraday_tips, scan_for_intraday_tips
 from engine import telegram_bot
 from engine.golden_picks import get_golden_picks, get_weekly_picks, calculate_cpr
+from engine.market_pulse import get_market_pulse, get_analyst_recommendations, get_news_sentiment
 import json
 import math
 
@@ -337,6 +338,31 @@ def api_cpr():
     cpr["symbol"] = symbol
     cpr["current_price"] = round(float(df.iloc[-1]["Close"]), 2)
     return safe_jsonify(cpr)
+
+
+# ─── MARKET PULSE ENDPOINTS ───
+
+@app.route("/api/market-pulse")
+def api_market_pulse():
+    """Get market pulse: India VIX + Nifty trend + overall mood."""
+    pulse = get_market_pulse()
+    return safe_jsonify(pulse)
+
+
+@app.route("/api/analyst")
+def api_analyst():
+    """Get analyst recommendations for a stock."""
+    symbol = request.args.get("symbol", "RELIANCE.NS")
+    data = get_analyst_recommendations(symbol)
+    return safe_jsonify(data or {"error": "No analyst data available"})
+
+
+@app.route("/api/news")
+def api_news():
+    """Get news sentiment for a stock."""
+    symbol = request.args.get("symbol", "RELIANCE.NS")
+    data = get_news_sentiment(symbol)
+    return safe_jsonify(data or {"headlines": [], "overall": 0, "label": "No data"})
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@
         initIntraday();
         initTelegram();
         initGoldenPicks();
+        initMarketPulse();
         updateClock();
         updateMarketStatus();
 
@@ -613,7 +614,9 @@
                     <b>CPR:</b> TC ₹${p.cpr?.tc || '—'} | Pivot ₹${p.cpr?.pivot || '—'} | BC ₹${p.cpr?.bc || '—'}
                     <span style="margin-left: 6px; color: ${p.cpr?.cpr_type === 'VERY_NARROW' || p.cpr?.cpr_type === 'NARROW' ? '#FFD700' : 'var(--text-muted)'}">[${p.cpr?.cpr_type || ''}]</span>
                 </div>
-                <ul class="tip-card__reasoning">${(p.reasons || []).slice(0, 4).map(r => `<li>${r}</li>`).join('')}</ul>
+                ${p.analyst ? `<div style="font-size:0.72rem;margin-bottom:4px;"><span style="background:${p.analyst.color};color:#000;padding:2px 6px;border-radius:4px;font-weight:600;">${p.analyst.consensus}</span> <span style="color:var(--text-muted);">${p.analyst.buy}B / ${p.analyst.hold}H / ${p.analyst.sell}S from brokerages</span></div>` : ''}
+                ${p.news && p.news.headlines?.length ? `<div style="font-size:0.7rem;margin-bottom:4px;color:${p.news.color};"><b>📰</b> ${p.news.headlines[0].title.substring(0, 80)}${p.news.headlines[0].title.length > 80 ? '...' : ''}</div>` : ''}
+                <ul class="tip-card__reasoning">${(p.reasons || []).slice(0, 6).map(r => `<li>${r}</li>`).join('')}</ul>
             </div>
         `;
     }
@@ -638,6 +641,41 @@
                 <ul class="tip-card__reasoning">${(p.reasons || []).slice(0, 5).map(r => `<li>${r}</li>`).join('')}</ul>
             </div>
         `;
+    }
+
+    // ─── Market Pulse ───
+    function initMarketPulse() {
+        document.getElementById('btnRefreshPulse').addEventListener('click', fetchMarketPulse);
+        fetchMarketPulse();
+    }
+
+    async function fetchMarketPulse() {
+        const card = document.getElementById('marketPulseCard');
+        card.style.display = 'block';
+        try {
+            const res = await fetch('/api/market-pulse');
+            const p = await res.json();
+            // VIX
+            if (p.vix) {
+                document.getElementById('pulseVixValue').textContent = p.vix.value;
+                document.getElementById('pulseVixValue').style.color = p.vix.color;
+                const sign = p.vix.change >= 0 ? '+' : '';
+                document.getElementById('pulseVixChange').innerHTML = `<span style="color:${p.vix.change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${sign}${p.vix.change} (${sign}${p.vix.change_pct}%)</span>`;
+                document.getElementById('pulseVixMood').innerHTML = `<span style="color:${p.vix.color}">${p.vix.level}</span> — ${p.vix.mood}`;
+            }
+            // Nifty
+            if (p.nifty) {
+                document.getElementById('pulseNiftyValue').textContent = formatNum(p.nifty.value);
+                const sign = p.nifty.change >= 0 ? '+' : '';
+                document.getElementById('pulseNiftyChange').innerHTML = `<span style="color:${p.nifty.change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${sign}${p.nifty.change} (${sign}${p.nifty.change_pct}%)</span>`;
+                document.getElementById('pulseNiftyTrend').innerHTML = `<span style="color:${p.nifty.color};font-weight:600;">${p.nifty.trend}</span> — ${p.nifty.advice}`;
+            }
+            // Overall
+            document.getElementById('pulseMood').innerHTML = `<span style="color:${p.overall_color}">${p.overall_mood}</span>`;
+            document.getElementById('pulseMoodText').innerHTML = `${p.overall_text} <span style="color:var(--text-muted);font-size:0.65rem;">Updated: ${p.timestamp}</span>`;
+        } catch (e) {
+            console.error('Market pulse error:', e);
+        }
     }
 
     // ─── Utilities ───
