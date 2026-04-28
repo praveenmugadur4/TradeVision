@@ -1,0 +1,151 @@
+[
+  {
+    "date": "2026-04-28",
+    "trades": [
+      {
+        "id": "POWERGRID.NS_2026-04-28",
+        "symbol": "POWERGRID.NS",
+        "name": "POWERGRID",
+        "direction": "SELL",
+        "entry_price": 319.95,
+        "target_price": 317.95,
+        "stop_loss": 323.95,
+        "quantity": 1000,
+        "target_points": 2.0,
+        "confidence": 82.5,
+        "status": "TARGET_HIT",
+        "current_price": 318.2,
+        "pnl": 2000.0,
+        "pnl_pct": 0.63,
+        "max_profit": 2000.0,
+        "max_loss": 4000.0,
+        "entry_time": "10:23:42",
+        "exit_time": "11:17:02",
+        "exit_price": 317.95,
+        "reasons": [
+          "\ud83d\udcca Price BELOW CPR bottom (320.95) \u2014 Clear bearish bias",
+          "\ud83c\udfaf CPR VERY NARROW (0.01%) \u2014 Strong trending day!",
+          "\u2705 VWAP (320.5) confirms CPR direction \u2014 Strong alignment"
+        ]
+      },
+      {
+        "id": "BHARTIARTL.NS_2026-04-28",
+        "symbol": "BHARTIARTL.NS",
+        "name": "BHARTIARTL",
+        "direction": "SELL",
+        "entry_price": 1833.2,
+        "target_price": 1831.2,
+        "stop_loss": 1837.2,
+        "quantity": 1000,
+        "target_points": 2.0,
+        "confidence": 81.7,
+        "status": "SL_HIT",
+        "current_price": 1843.7,
+        "pnl": -4000.0,
+        "pnl_pct": -0.22,
+        "max_profit": 2000.0,
+        "max_loss": 4000.0,
+        "entry_time": "10:23:42",
+        "exit_time": "10:54:41",
+        "exit_price": 1837.2,
+        "reasons": [
+          "\ud83d\udcca Price ABOVE CPR top (1820.47) \u2014 Bullish bias",
+          "\ud83c\udfaf CPR VERY NARROW (0.04%) \u2014 Strong trending day!",
+          "\u2705 VWAP (1826.4) confirms CPR direction \u2014 Strong alignment"
+        ]
+      },
+      {
+        "id": "SBIN.NS_2026-04-28",
+        "symbol": "SBIN.NS",
+        "name": "SBIN",
+        "direction": "BUY",
+        "entry_price": 1106.85,
+        "target_price": 1108.85,
+        "stop_loss": 1102.85,
+        "quantity": 1000,
+        "target_points": 2.0,
+        "confidence": 75.8,
+        "status": "TARGET_HIT",
+        "current_price": 1105.25,
+        "pnl": 2000.0,
+        "pnl_pct": 0.18,
+        "max_profit": 2000.0,
+        "max_loss": 4000.0,
+        "entry_time": "10:23:42",
+        "exit_time": "11:00:42",
+        "exit_price": 1108.85,
+        "reasons": [
+          "\ud83d\udcca Price BELOW CPR bottom (1109.1) \u2014 Clear bearish bias",
+          "\ud83c\udfaf CPR VERY NARROW (0.17%) \u2014 Strong trending day!",
+          "\u26a0\ufe0f VWAP and CPR conflict \u2014 Weaker setup"
+        ]
+      },
+      {
+        "id": "ASIANPAINT.NS_2026-04-28",
+        "symbol": "ASIANPAINT.NS",
+        "name": "ASIANPAINT",
+        "direction": "BUY",
+        "entry_price": 2488.8,
+        "target_price": 2490.8,
+        "stop_loss": 2484.8,
+        "quantity": 1000,
+        "target_points": 2.0,
+        "confidence": 74.2,
+        "status": "TARGET_HIT",
+        "current_price": 2484.0,
+        "pnl": 2000.0,
+        "pnl_pct": 0.08,
+        "max_profit": 2000.0,
+        "max_loss": 4000.0,
+        "entry_time": "10:23:42",
+        "exit_time": "10:24:36",
+        "exit_price": 2490.8,
+        "reasons": [
+          "\ud83d\udcca Price BELOW CPR bottom (2497.65) \u2014 Clear bearish bias",
+          "\ud83c\udfaf CPR Narrow (0.33%) \u2014 Trending day likely",
+          "\u26a0\ufe0f VWAP and CPR conflict \u2014 Weaker setup"
+        ]
+      },
+      {
+        "id": "PERSISTENT.NS_2026-04-28",
+        "symbol": "PERSISTENT.NS",
+        "name": "PERSISTENT",
+        "direction": "SELL",
+        "entry_price": 4784.8,
+        "target_price": 4782.8,
+        "stop_loss": 4788.8,
+        "quantity": 1000,
+        "target_points": 2.0,
+        "confidence": 74.2,
+        "status": "TARGET_HIT",
+        "current_price": 4760.3,
+        "pnl": 2000.0,
+        "pnl_pct": 0.04,
+        "max_profit": 2000.0,
+        "max_loss": 4000.0,
+        "entry_time": "10:23:42",
+        "exit_time": "10:44:32",
+        "exit_price": 4782.8,
+        "reasons": [
+          "\ud83d\udcca Price BELOW CPR bottom (4798.9) \u2014 Clear bearish bias",
+          "\ud83c\udfaf CPR VERY NARROW (0.26%) \u2014 Strong trending day!",
+          "\u2705 VWAP (4799.6) confirms CPR direction \u2014 Strong alignment"
+        ]
+      }
+    ],
+    "summary": {
+      "total_trades": 5,
+      "active": 0,
+      "target_hit": 4,
+      "sl_hit": 1,
+      "total_pnl": 4000.0,
+      "total_investment": 10533600.0,
+      "started_at": "10:23:42",
+      "last_updated": "11:19:17",
+      "win_rate": 80.0,
+      "winners": 4,
+      "losers": 1,
+      "closed_at": "11:19:17"
+    }
+  }
+]

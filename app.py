@@ -376,7 +376,8 @@ def api_paper_start():
     qty = int(body.get("quantity", 1000))
     pts = float(body.get("target_points", 2))
     top = int(body.get("top_n", 5))
-    result = start_paper_trading(qty=qty, target_pts=pts, top_n=top)
+    force = bool(body.get("force_restart", False))
+    result = start_paper_trading(qty=qty, target_pts=pts, top_n=top, force_restart=force)
     return safe_jsonify(result)
 
 

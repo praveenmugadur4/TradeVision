@@ -58,7 +58,7 @@ def _safe(val):
     return float(val)
 
 
-def start_paper_trading(qty=None, target_pts=None, top_n=5):
+def start_paper_trading(qty=None, target_pts=None, top_n=5, force_restart=False):
     """
     Run golden picks scan and auto-place paper trades on top stocks.
     
@@ -66,6 +66,7 @@ def start_paper_trading(qty=None, target_pts=None, top_n=5):
         qty: Quantity per trade (default 1000)
         target_pts: Points target per trade (default 2)
         top_n: Number of stocks to pick (default 5)
+        force_restart: If True, close existing trades and start fresh
     
     Returns:
         dict with trades placed
@@ -77,11 +78,15 @@ def start_paper_trading(qty=None, target_pts=None, top_n=5):
     # Check if we already have trades for today
     existing = _load_trades()
     if existing.get("date") == today and existing.get("trades"):
-        return {
-            "status": "already_active",
-            "message": f"You already have {len(existing['trades'])} paper trades running today.",
-            "data": existing,
-        }
+        if not force_restart:
+            return {
+                "status": "already_active",
+                "message": f"You already have {len(existing['trades'])} paper trades running today. Click '🔁 Reset & Restart' to start fresh.",
+                "data": existing,
+            }
+        else:
+            # Save existing trades to history before resetting
+            _save_to_history(existing)
 
     # Run golden picks scan
     picks = get_golden_picks(top_n=top_n)
@@ -99,20 +104,18 @@ def start_paper_trading(qty=None, target_pts=None, top_n=5):
         direction = pick["direction"]
 
         if direction == "BUY":
-            # Buy at entry, sell at entry + target_points
             sell_target = round(entry + target_points, 2)
-            stop_loss = round(entry - (target_points * 2), 2)  # 2:1 risk
+            stop_loss = round(entry - (target_points * 2), 2)
             max_profit = round((sell_target - entry) * quantity, 2)
             max_loss = round((entry - stop_loss) * quantity, 2)
         else:
-            # Sell/Short at entry, cover at entry - target_points
             sell_target = round(entry - target_points, 2)
             stop_loss = round(entry + (target_points * 2), 2)
             max_profit = round((entry - sell_target) * quantity, 2)
             max_loss = round((stop_loss - entry) * quantity, 2)
 
         trade = {
-            "id": f"{pick['symbol']}_{today}",
+            "id": f"{pick['symbol']}_{today}_{datetime.now().strftime('%H%M%S')}",
             "symbol": pick["symbol"],
             "name": pick["name"],
             "direction": direction,
@@ -122,7 +125,7 @@ def start_paper_trading(qty=None, target_pts=None, top_n=5):
             "quantity": quantity,
             "target_points": target_points,
             "confidence": pick["confidence"],
-            "status": "ACTIVE",  # ACTIVE, TARGET_HIT, SL_HIT, OPEN
+            "status": "ACTIVE",
             "current_price": entry,
             "pnl": 0,
             "pnl_pct": 0,
@@ -153,9 +156,32 @@ def start_paper_trading(qty=None, target_pts=None, top_n=5):
 
     return {
         "status": "started",
-        "message": f"Paper trading started! {len(trades)} trades placed.",
+        "message": f"Paper trading started! {len(trades)} trades placed with qty={quantity}, target=₹{target_points}.",
         "data": trade_data,
     }
+
+
+def _save_to_history(data):
+    """Save a trade session to history (used when resetting mid-day)."""
+    # Close any remaining active trades at current price
+    for trade in data.get("trades", []):
+        if trade["status"] == "ACTIVE":
+            trade["status"] = "CLOSED"
+            trade["exit_price"] = trade["current_price"]
+            trade["exit_time"] = datetime.now().strftime("%H:%M:%S")
+
+    total_pnl = sum(t["pnl"] for t in data.get("trades", []))
+    winners = sum(1 for t in data.get("trades", []) if t["pnl"] > 0)
+    total = len(data.get("trades", []))
+    data["summary"]["total_pnl"] = round(total_pnl, 2)
+    data["summary"]["winners"] = winners
+    data["summary"]["win_rate"] = round((winners / total) * 100, 1) if total > 0 else 0
+    data["summary"]["closed_at"] = datetime.now().strftime("%H:%M:%S")
+
+    history = _load_history()
+    history.append(data)
+    history = history[-30:]
+    _save_history(history)
 
 
 def update_paper_trades():

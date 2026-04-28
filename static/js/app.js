@@ -685,6 +685,7 @@
     function initPaperTrading() {
         document.getElementById('btnStartPaper').addEventListener('click', startPaperTrading);
         document.getElementById('btnRefreshPaper').addEventListener('click', refreshPaperTrades);
+        document.getElementById('btnResetPaper').addEventListener('click', resetPaperTrading);
         document.getElementById('btnClosePaper').addEventListener('click', closePaperDay);
         // Auto-load existing trades and start 30s refresh
         refreshPaperTrades().then(() => {
@@ -752,6 +753,37 @@
             loadPerformanceStats();
         } catch (e) {
             console.error('Paper trade close error:', e);
+        }
+    }
+
+    async function resetPaperTrading() {
+        if (!confirm('Save current trades to history and start fresh with new settings?')) return;
+        const btn = document.getElementById('btnResetPaper');
+        const qty = parseInt(document.getElementById('paperQty').value) || 1000;
+        const pts = parseFloat(document.getElementById('paperTarget').value) || 2;
+        const topN = parseInt(document.getElementById('paperTopN').value) || 5;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span> Resetting...';
+
+        try {
+            const res = await fetch('/api/paper-trade/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: qty, target_points: pts, top_n: topN, force_restart: true }),
+            });
+            const result = await res.json();
+            if (result.data) {
+                renderPaperTrades(result.data);
+                if (paperRefreshInterval) clearInterval(paperRefreshInterval);
+                paperRefreshInterval = setInterval(refreshPaperTrades, 30000);
+            }
+            loadPerformanceStats();
+        } catch (e) {
+            console.error('Paper trade reset error:', e);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🔁 Reset & Restart';
         }
     }
 
