@@ -395,6 +395,16 @@ def api_paper_close():
     return safe_jsonify(result)
 
 
+@app.route("/api/paper-trade/reset", methods=["POST"])
+def api_paper_reset():
+    """Clear the trade file so a fresh Start works."""
+    import os
+    trade_file = os.path.join(os.path.dirname(__file__), "paper_trades.json")
+    if os.path.exists(trade_file):
+        os.remove(trade_file)
+    return safe_jsonify({"status": "reset", "message": "Trade file cleared. Ready for new trades."})
+
+
 @app.route("/api/paper-trade/history")
 def api_paper_history():
     """Get historical paper trade results."""

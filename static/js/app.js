@@ -757,27 +757,31 @@
     }
 
     async function resetPaperTrading() {
-        if (!confirm('Save current trades to history and start fresh with new settings?')) return;
+        if (!confirm('Save current trades to history and reset? You can then change settings and click Start.')) return;
         const btn = document.getElementById('btnResetPaper');
-        const qty = parseInt(document.getElementById('paperQty').value) || 1000;
-        const pts = parseFloat(document.getElementById('paperTarget').value) || 2;
-        const topN = parseInt(document.getElementById('paperTopN').value) || 5;
-
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span> Resetting...';
 
         try {
-            const res = await fetch('/api/paper-trade/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ quantity: qty, target_points: pts, top_n: topN, force_restart: true }),
-            });
-            const result = await res.json();
-            if (result.data) {
-                renderPaperTrades(result.data);
-                if (paperRefreshInterval) clearInterval(paperRefreshInterval);
-                paperRefreshInterval = setInterval(refreshPaperTrades, 30000);
-            }
+            // Close current trades and save to history
+            await fetch('/api/paper-trade/close', { method: 'POST' });
+
+            // Clear the UI
+            document.getElementById('paperTotalPnl').innerHTML = '₹0';
+            document.getElementById('paperActive').textContent = '0';
+            document.getElementById('paperTargetHit').textContent = '0';
+            document.getElementById('paperSlHit').textContent = '0';
+            document.getElementById('paperWinRate').textContent = '0%';
+            document.getElementById('paperTradesBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">✅ Reset done! Set your Quantity, Target & Top N above, then click 🚀 Start Paper Trading</td></tr>';
+            document.getElementById('paperLastUpdated').innerHTML = 'Ready for new trades';
+
+            // Stop auto-refresh
+            if (paperRefreshInterval) clearInterval(paperRefreshInterval);
+            paperRefreshInterval = null;
+
+            // Clear the trade file so Start works fresh
+            await fetch('/api/paper-trade/reset', { method: 'POST' });
+
             loadPerformanceStats();
         } catch (e) {
             console.error('Paper trade reset error:', e);
