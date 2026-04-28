@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 TradeVision — Flask Server (Enhanced)
 Premium Trading Dashboard with Backtesting, Alerts, Intraday Tips & Stock Categories
@@ -17,6 +18,7 @@ from engine.intraday import generate_intraday_tips, scan_for_intraday_tips
 from engine import telegram_bot
 from engine.golden_picks import get_golden_picks, get_weekly_picks, calculate_cpr
 from engine.market_pulse import get_market_pulse, get_analyst_recommendations, get_news_sentiment
+from engine.paper_trader import start_paper_trading, update_paper_trades, close_day, get_trade_history, get_performance_stats
 import json
 import math
 
@@ -363,6 +365,45 @@ def api_news():
     symbol = request.args.get("symbol", "RELIANCE.NS")
     data = get_news_sentiment(symbol)
     return safe_jsonify(data or {"headlines": [], "overall": 0, "label": "No data"})
+
+
+# ─── PAPER TRADING ENDPOINTS ───
+
+@app.route("/api/paper-trade/start", methods=["POST"])
+def api_paper_start():
+    """Start paper trading — scan and auto-place dummy trades."""
+    body = request.get_json() or {}
+    qty = int(body.get("quantity", 1000))
+    pts = float(body.get("target_points", 2))
+    top = int(body.get("top_n", 5))
+    result = start_paper_trading(qty=qty, target_pts=pts, top_n=top)
+    return safe_jsonify(result)
+
+
+@app.route("/api/paper-trade/status")
+def api_paper_status():
+    """Get current status of all paper trades with live P&L."""
+    data = update_paper_trades()
+    return safe_jsonify(data)
+
+
+@app.route("/api/paper-trade/close", methods=["POST"])
+def api_paper_close():
+    """Close all active trades at current price (end of day)."""
+    result = close_day()
+    return safe_jsonify(result)
+
+
+@app.route("/api/paper-trade/history")
+def api_paper_history():
+    """Get historical paper trade results."""
+    return safe_jsonify(get_trade_history())
+
+
+@app.route("/api/paper-trade/performance")
+def api_paper_performance():
+    """Get overall performance statistics."""
+    return safe_jsonify(get_performance_stats())
 
 
 if __name__ == "__main__":

@@ -60,6 +60,9 @@
     <button class="nav-tab" data-tab="weekly" id="tabWeekly">
         <span class="nav-tab__icon">📅</span>Weekly Strategy
     </button>
+    <button class="nav-tab" data-tab="paper" id="tabPaper">
+        <span class="nav-tab__icon">💰</span>Paper Trading
+    </button>
 </nav>
 
 <!-- ═══ MAIN CONTENT ═══ -->
@@ -415,6 +418,95 @@
                 <div class="watchlist-grid" id="weeklyPicksGrid">
                     <div class="empty-state" style="grid-column:1/-1;"><div class="empty-state__icon">📅</div><div class="empty-state__text">Click "Find Weekly Picks" to scan for swing trade opportunities</div></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PAPER TRADING TAB ═══ -->
+    <div class="tab-content" id="contentPaper">
+        <!-- Controls -->
+        <div class="card" style="margin-bottom: 16px;">
+            <div class="card__header" style="justify-content: space-between;">
+                <div class="card__title"><span class="card__title-icon">💰</span>Paper Trading — Validate Predictions with Dummy Trades</div>
+            </div>
+            <div class="card__body" style="padding: 12px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                    <div>
+                        <label style="font-size:0.72rem;color:var(--text-muted);display:block;margin-bottom:4px;">Quantity/Trade</label>
+                        <input type="number" id="paperQty" value="1000" min="1" style="width:100px;padding:6px 8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font-mono);">
+                    </div>
+                    <div>
+                        <label style="font-size:0.72rem;color:var(--text-muted);display:block;margin-bottom:4px;">Target (₹/share)</label>
+                        <input type="number" id="paperTarget" value="2" min="0.5" step="0.5" style="width:80px;padding:6px 8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font-mono);">
+                    </div>
+                    <div>
+                        <label style="font-size:0.72rem;color:var(--text-muted);display:block;margin-bottom:4px;">Top N Stocks</label>
+                        <input type="number" id="paperTopN" value="5" min="1" max="10" style="width:60px;padding:6px 8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:var(--font-mono);">
+                    </div>
+                    <button class="btn btn-primary" id="btnStartPaper" style="padding:8px 20px;background:linear-gradient(135deg,#FFD700,#FFA000);">🚀 Start Paper Trading</button>
+                    <button class="btn" id="btnRefreshPaper" style="padding:8px 16px;background:var(--bg-secondary);">🔄 Refresh P&L</button>
+                    <button class="btn" id="btnClosePaper" style="padding:8px 16px;background:var(--accent-red);color:#fff;">🔴 Close Day</button>
+                </div>
+                <div style="margin-top:10px;font-size:0.73rem;color:var(--text-muted);">
+                    ⚠️ <b>Paper trades only</b> — No real money is used. Validates if predictions would have been profitable. SL = 2x target for 1:2 risk.
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;" id="paperSummary">
+            <div class="card" style="text-align:center;padding:14px;">
+                <div style="font-size:0.7rem;color:var(--text-muted);">Total P&L</div>
+                <div id="paperTotalPnl" style="font-size:1.5rem;font-weight:700;font-family:var(--font-mono);">₹0</div>
+            </div>
+            <div class="card" style="text-align:center;padding:14px;">
+                <div style="font-size:0.7rem;color:var(--text-muted);">Active Trades</div>
+                <div id="paperActive" style="font-size:1.5rem;font-weight:700;">0</div>
+            </div>
+            <div class="card" style="text-align:center;padding:14px;">
+                <div style="font-size:0.7rem;color:var(--text-muted);">🎯 Target Hit</div>
+                <div id="paperTargetHit" style="font-size:1.5rem;font-weight:700;color:var(--accent-green);">0</div>
+            </div>
+            <div class="card" style="text-align:center;padding:14px;">
+                <div style="font-size:0.7rem;color:var(--text-muted);">🛑 SL Hit</div>
+                <div id="paperSlHit" style="font-size:1.5rem;font-weight:700;color:var(--accent-red);">0</div>
+            </div>
+            <div class="card" style="text-align:center;padding:14px;">
+                <div style="font-size:0.7rem;color:var(--text-muted);">Win Rate</div>
+                <div id="paperWinRate" style="font-size:1.5rem;font-weight:700;">0%</div>
+            </div>
+        </div>
+
+        <!-- Trades Table -->
+        <div class="card">
+            <div class="card__header"><div class="card__title"><span class="card__title-icon">📊</span>Today's Paper Trades</div></div>
+            <div class="card__body" style="padding:0;overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.78rem;" id="paperTradesTable">
+                    <thead>
+                        <tr style="background:var(--bg-primary);text-align:left;">
+                            <th style="padding:10px 12px;">Stock</th>
+                            <th style="padding:10px 8px;">Dir</th>
+                            <th style="padding:10px 8px;">Entry</th>
+                            <th style="padding:10px 8px;">Target</th>
+                            <th style="padding:10px 8px;">SL</th>
+                            <th style="padding:10px 8px;">Current</th>
+                            <th style="padding:10px 8px;">Qty</th>
+                            <th style="padding:10px 8px;">P&L</th>
+                            <th style="padding:10px 8px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paperTradesBody">
+                        <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">Click "🚀 Start Paper Trading" to begin</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Performance History -->
+        <div class="card" style="margin-top:16px;">
+            <div class="card__header"><div class="card__title"><span class="card__title-icon">📈</span>Performance History</div></div>
+            <div class="card__body" id="paperPerformance" style="padding:12px;">
+                <div style="color:var(--text-muted);text-align:center;padding:20px;">Performance stats will appear after your first closed trading day.</div>
             </div>
         </div>
     </div>

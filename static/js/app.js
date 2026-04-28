@@ -23,6 +23,7 @@
         initTelegram();
         initGoldenPicks();
         initMarketPulse();
+        initPaperTrading();
         updateClock();
         updateMarketStatus();
 
@@ -675,6 +676,175 @@
             document.getElementById('pulseMoodText').innerHTML = `${p.overall_text} <span style="color:var(--text-muted);font-size:0.65rem;">Updated: ${p.timestamp}</span>`;
         } catch (e) {
             console.error('Market pulse error:', e);
+        }
+    }
+
+    // ─── Paper Trading ───
+    let paperRefreshInterval = null;
+
+    function initPaperTrading() {
+        document.getElementById('btnStartPaper').addEventListener('click', startPaperTrading);
+        document.getElementById('btnRefreshPaper').addEventListener('click', refreshPaperTrades);
+        document.getElementById('btnClosePaper').addEventListener('click', closePaperDay);
+        // Auto-load existing trades if any
+        refreshPaperTrades();
+        loadPerformanceStats();
+    }
+
+    async function startPaperTrading() {
+        const btn = document.getElementById('btnStartPaper');
+        const qty = parseInt(document.getElementById('paperQty').value) || 1000;
+        const pts = parseFloat(document.getElementById('paperTarget').value) || 2;
+        const topN = parseInt(document.getElementById('paperTopN').value) || 5;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;"></span> Scanning & placing trades...';
+
+        try {
+            const res = await fetch('/api/paper-trade/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: qty, target_points: pts, top_n: topN }),
+            });
+            const result = await res.json();
+
+            if (result.status === 'started') {
+                renderPaperTrades(result.data);
+                // Auto-refresh every 60 seconds
+                if (paperRefreshInterval) clearInterval(paperRefreshInterval);
+                paperRefreshInterval = setInterval(refreshPaperTrades, 60000);
+            } else if (result.status === 'already_active') {
+                renderPaperTrades(result.data);
+            } else {
+                document.getElementById('paperTradesBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">' + result.message + '</td></tr>';
+            }
+        } catch (e) {
+            console.error('Paper trade start error:', e);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Start Paper Trading';
+        }
+    }
+
+    async function refreshPaperTrades() {
+        try {
+            const res = await fetch('/api/paper-trade/status');
+            const data = await res.json();
+            if (data && data.trades && data.trades.length > 0) {
+                renderPaperTrades(data);
+            }
+        } catch (e) {
+            console.error('Paper trade refresh error:', e);
+        }
+    }
+
+    async function closePaperDay() {
+        if (!confirm('Close all active trades at current price? This will finalize today\'s P&L.')) return;
+        try {
+            const res = await fetch('/api/paper-trade/close', { method: 'POST' });
+            const result = await res.json();
+            if (result.data) renderPaperTrades(result.data);
+            if (paperRefreshInterval) clearInterval(paperRefreshInterval);
+            loadPerformanceStats();
+        } catch (e) {
+            console.error('Paper trade close error:', e);
+        }
+    }
+
+    function renderPaperTrades(data) {
+        const s = data.summary || {};
+        const pnl = s.total_pnl || 0;
+        const pnlColor = pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+        // Summary cards
+        document.getElementById('paperTotalPnl').innerHTML = `<span style="color:${pnlColor}">₹${pnl.toLocaleString('en-IN')}</span>`;
+        document.getElementById('paperActive').textContent = s.active || 0;
+        document.getElementById('paperTargetHit').textContent = s.target_hit || 0;
+        document.getElementById('paperSlHit').textContent = s.sl_hit || 0;
+        document.getElementById('paperWinRate').textContent = (s.win_rate || 0) + '%';
+
+        // Table
+        const tbody = document.getElementById('paperTradesBody');
+        if (!data.trades || data.trades.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">No trades yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.trades.map(t => {
+            const tPnl = t.pnl || 0;
+            const tColor = tPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            const dirColor = t.direction === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)';
+            let statusBadge = '';
+            if (t.status === 'TARGET_HIT') statusBadge = '<span style="background:#00E676;color:#000;padding:2px 8px;border-radius:4px;font-weight:600;font-size:0.7rem;">🎯 HIT</span>';
+            else if (t.status === 'SL_HIT') statusBadge = '<span style="background:#FF1744;color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;font-size:0.7rem;">🛑 SL</span>';
+            else if (t.status === 'CLOSED') statusBadge = '<span style="background:#FFD740;color:#000;padding:2px 8px;border-radius:4px;font-weight:600;font-size:0.7rem;">⏹ CLOSED</span>';
+            else statusBadge = '<span style="background:var(--accent-blue);color:#fff;padding:2px 8px;border-radius:4px;font-weight:600;font-size:0.7rem;">⚡ LIVE</span>';
+
+            return `<tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:10px 12px;font-weight:600;">${t.name}</td>
+                <td style="padding:10px 8px;color:${dirColor};font-weight:600;">${t.direction}</td>
+                <td style="padding:10px 8px;font-family:var(--font-mono);">₹${t.entry_price}</td>
+                <td style="padding:10px 8px;font-family:var(--font-mono);color:var(--accent-green);">₹${t.target_price}</td>
+                <td style="padding:10px 8px;font-family:var(--font-mono);color:var(--accent-red);">₹${t.stop_loss}</td>
+                <td style="padding:10px 8px;font-family:var(--font-mono);font-weight:600;">₹${t.current_price}</td>
+                <td style="padding:10px 8px;">${t.quantity}</td>
+                <td style="padding:10px 8px;font-family:var(--font-mono);font-weight:700;color:${tColor};">${tPnl >= 0 ? '+' : ''}₹${tPnl.toLocaleString('en-IN')}</td>
+                <td style="padding:10px 8px;">${statusBadge}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function loadPerformanceStats() {
+        try {
+            const res = await fetch('/api/paper-trade/performance');
+            const stats = await res.json();
+            const el = document.getElementById('paperPerformance');
+
+            if (!stats || stats.total_days === 0) {
+                el.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px;">No trading history yet. Start paper trading and close the day to see performance.</div>';
+                return;
+            }
+
+            const pnlColor = stats.total_pnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            el.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Total Days</div>
+                        <div style="font-size:1.2rem;font-weight:700;">${stats.total_days}</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Total P&L</div>
+                        <div style="font-size:1.2rem;font-weight:700;color:${pnlColor};">₹${stats.total_pnl?.toLocaleString('en-IN')}</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Avg Daily P&L</div>
+                        <div style="font-size:1.2rem;font-weight:700;">₹${stats.avg_daily_pnl?.toLocaleString('en-IN')}</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Win Rate</div>
+                        <div style="font-size:1.2rem;font-weight:700;color:${stats.win_rate > 50 ? 'var(--accent-green)' : 'var(--accent-red)'}">${stats.win_rate}%</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Day Win Rate</div>
+                        <div style="font-size:1.2rem;font-weight:700;">${stats.day_win_rate}%</div>
+                        <div style="font-size:0.65rem;color:var(--text-muted);">${stats.winning_days}W / ${stats.losing_days}L</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Target Hit %</div>
+                        <div style="font-size:1.2rem;font-weight:700;">${stats.target_hit_rate}%</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Best Day</div>
+                        <div style="font-size:1.2rem;font-weight:700;color:var(--accent-green);">₹${stats.best_day?.toLocaleString('en-IN')}</div>
+                    </div>
+                    <div style="background:var(--bg-primary);padding:12px;border-radius:var(--radius-sm);text-align:center;">
+                        <div style="font-size:0.68rem;color:var(--text-muted);">Worst Day</div>
+                        <div style="font-size:1.2rem;font-weight:700;color:var(--accent-red);">₹${stats.worst_day?.toLocaleString('en-IN')}</div>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            console.error('Performance stats error:', e);
         }
     }
 
