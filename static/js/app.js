@@ -686,8 +686,12 @@
         document.getElementById('btnStartPaper').addEventListener('click', startPaperTrading);
         document.getElementById('btnRefreshPaper').addEventListener('click', refreshPaperTrades);
         document.getElementById('btnClosePaper').addEventListener('click', closePaperDay);
-        // Auto-load existing trades if any
-        refreshPaperTrades();
+        // Auto-load existing trades and start 30s refresh
+        refreshPaperTrades().then(() => {
+            if (!paperRefreshInterval) {
+                paperRefreshInterval = setInterval(refreshPaperTrades, 30000);
+            }
+        });
         loadPerformanceStats();
     }
 
@@ -710,9 +714,9 @@
 
             if (result.status === 'started') {
                 renderPaperTrades(result.data);
-                // Auto-refresh every 60 seconds
+                // Auto-refresh every 30 seconds
                 if (paperRefreshInterval) clearInterval(paperRefreshInterval);
-                paperRefreshInterval = setInterval(refreshPaperTrades, 60000);
+                paperRefreshInterval = setInterval(refreshPaperTrades, 30000);
             } else if (result.status === 'already_active') {
                 renderPaperTrades(result.data);
             } else {
@@ -762,6 +766,12 @@
         document.getElementById('paperTargetHit').textContent = s.target_hit || 0;
         document.getElementById('paperSlHit').textContent = s.sl_hit || 0;
         document.getElementById('paperWinRate').textContent = (s.win_rate || 0) + '%';
+
+        // Last updated timestamp
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const updatedEl = document.getElementById('paperLastUpdated');
+        if (updatedEl) updatedEl.innerHTML = `Last updated: <b>${timeStr}</b> (auto-refreshes every 30s)`;
 
         // Table
         const tbody = document.getElementById('paperTradesBody');
