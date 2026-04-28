@@ -175,35 +175,32 @@ def update_paper_trades():
     total_pnl = 0
 
     for trade in data["trades"]:
-        if trade["status"] not in ("ACTIVE",):
-            # Already closed — just add to totals
-            total_pnl += trade["pnl"]
-            if trade["status"] == "TARGET_HIT":
-                target_hit += 1
-            elif trade["status"] == "SL_HIT":
-                sl_hit += 1
-            continue
-
-        # Fetch LIVE current price (bypass cache)
+        # Fetch LIVE current price for ALL trades (bypass cache)
         try:
             ticker = yf.Ticker(trade["symbol"])
-            # Try fast_info first (most real-time)
             try:
                 info = ticker.fast_info
                 current = _safe(float(info.get("lastPrice", 0) or info.get("last_price", 0)))
             except Exception:
                 current = None
 
-            # Fallback: get latest from 2-minute interval data
             if not current or current == 0:
                 df = ticker.history(period="1d", interval="2m")
                 if df is not None and not df.empty:
                     current = _safe(float(df["Close"].iloc[-1]))
 
-            if current is None or current == 0:
-                continue
-            trade["current_price"] = round(current, 2)
+            if current and current > 0:
+                trade["current_price"] = round(current, 2)
         except Exception:
+            pass
+
+        if trade["status"] not in ("ACTIVE",):
+            # Already closed — just add to totals, but current_price is updated above
+            total_pnl += trade["pnl"]
+            if trade["status"] == "TARGET_HIT":
+                target_hit += 1
+            elif trade["status"] == "SL_HIT":
+                sl_hit += 1
             continue
 
         entry = trade["entry_price"]
