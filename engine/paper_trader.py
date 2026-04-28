@@ -8,9 +8,9 @@ conservative targets (₹1-2 profit/share), and tracks P&L throughout the day.
 import json
 import os
 import math
+import yfinance as yf
 from datetime import datetime, date
 from .golden_picks import get_golden_picks
-from .market_data import fetch_market_data
 
 TRADE_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "paper_trades.json")
 HISTORY_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "paper_trade_history.json")
@@ -184,16 +184,25 @@ def update_paper_trades():
                 sl_hit += 1
             continue
 
-        # Fetch current price
+        # Fetch LIVE current price (bypass cache)
         try:
-            df = fetch_market_data(trade["symbol"], period="1d", interval="1m")
-            if df is not None and not df.empty:
-                current = _safe(float(df["Close"].iloc[-1]))
-                if current is None:
-                    continue
-                trade["current_price"] = round(current, 2)
-            else:
+            ticker = yf.Ticker(trade["symbol"])
+            # Try fast_info first (most real-time)
+            try:
+                info = ticker.fast_info
+                current = _safe(float(info.get("lastPrice", 0) or info.get("last_price", 0)))
+            except Exception:
+                current = None
+
+            # Fallback: get latest from 2-minute interval data
+            if not current or current == 0:
+                df = ticker.history(period="1d", interval="2m")
+                if df is not None and not df.empty:
+                    current = _safe(float(df["Close"].iloc[-1]))
+
+            if current is None or current == 0:
                 continue
+            trade["current_price"] = round(current, 2)
         except Exception:
             continue
 
